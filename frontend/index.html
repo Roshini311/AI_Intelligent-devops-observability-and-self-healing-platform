@@ -3,81 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus AI Observability & Self-Healing Platform</title>
+    <title>Nexus AI Observability | Premium Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { 
-            background-color: #030712; 
-            color: #f3f4f6; 
-            font-family: 'Inter', sans-serif; 
+            background: radial-gradient(circle at 15% 50%, #0f172a 0%, #020617 50%, #000000 100%);
+            color: #f8fafc; 
+            font-family: 'Outfit', sans-serif; 
+            overflow-x: hidden;
         }
-        .healthy { color: #34d399; border-color: rgba(52, 211, 153, 0.2); background-color: rgba(52, 211, 153, 0.1); }
-        .degraded { color: #fbbf24; border-color: rgba(251, 191, 36, 0.2); background-color: rgba(251, 191, 36, 0.1); animation: pulse 2s infinite; }
-        .self-healing { color: #60a5fa; border-color: rgba(96, 165, 250, 0.2); background-color: rgba(96, 165, 250, 0.1); }
-        .critical { color: #f87171; border-color: rgba(248, 113, 113, 0.2); background-color: rgba(248, 113, 113, 0.1); animation: pulse 1s infinite; }
         
-        .event-log::-webkit-scrollbar { width: 6px; }
-        .event-log::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        /* Subtle animated background mesh */
+        .bg-mesh {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-image: 
+                radial-gradient(at 40% 20%, rgba(56, 189, 248, 0.05) 0px, transparent 50%),
+                radial-gradient(at 80% 0%, rgba(167, 139, 250, 0.05) 0px, transparent 50%),
+                radial-gradient(at 0% 50%, rgba(52, 211, 153, 0.03) 0px, transparent 50%);
+            z-index: -1;
+            animation: breathe 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes breathe {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.05); opacity: 1; }
+        }
+
+        /* Glassmorphism Classes */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-left: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+            border-top: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .glass-header {
+            background: rgba(2, 6, 23, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Status Colors with nice glows */
+        .healthy { 
+            color: #10b981; 
+            border-color: rgba(16, 185, 129, 0.4); 
+            background-color: rgba(16, 185, 129, 0.1); 
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+        }
+        .degraded { 
+            color: #f59e0b; 
+            border-color: rgba(245, 158, 11, 0.4); 
+            background-color: rgba(245, 158, 11, 0.1); 
+            animation: pulse-warn 2s infinite; 
+        }
+        .self-healing { 
+            color: #3b82f6; 
+            border-color: rgba(59, 130, 246, 0.4); 
+            background-color: rgba(59, 130, 246, 0.1); 
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+            animation: pulse-heal 2s infinite;
+        }
+        .critical { 
+            color: #ef4444; 
+            border-color: rgba(239, 68, 68, 0.5); 
+            background-color: rgba(239, 68, 68, 0.15); 
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.4);
+            animation: pulse-crit 1s infinite; 
+        }
+
+        @keyframes pulse-warn { 0%, 100% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.1); } 50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); } }
+        @keyframes pulse-heal { 0%, 100% { box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); } 50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.5); } }
+        @keyframes pulse-crit { 0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.2); } 50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.6); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        
+        .event-log::-webkit-scrollbar { width: 4px; }
+        .event-log::-webkit-scrollbar-track { background: transparent; }
+        .event-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        .event-log::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
-    <header class="bg-gray-900 border-b border-gray-800 p-4 sticky top-0 z-10 shadow-md">
+    <div class="bg-mesh"></div>
+
+    <header class="glass-header p-4 sticky top-0 z-20">
         <div class="container mx-auto flex items-center justify-between">
-            <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 tracking-wide">
-                Nexus AI Observability
-            </h1>
-            <span class="text-sm font-medium text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">
-                DevOps Self-Healing Platform
-            </span>
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-400 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                    <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                </div>
+                <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-indigo-300 to-emerald-300 tracking-wide">
+                    Nexus AI Observability
+                </h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="relative flex h-3 w-3">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-sm text-gray-400 font-medium">Live Stream</span>
+                </div>
+                <span class="text-xs font-semibold text-indigo-300 bg-indigo-500/10 px-3 py-1.5 rounded-full border border-indigo-500/20 backdrop-blur-md">
+                    Automated Self-Healing Engine
+                </span>
+            </div>
         </div>
     </header>
     
-    <main class="container mx-auto py-8 px-4 flex-1 space-y-6 flex flex-col">
+    <main class="container mx-auto py-8 px-4 flex-1 space-y-6 flex flex-col relative z-10">
         <!-- Top Metrics Row -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg">
-                <h3 class="text-gray-400 text-sm font-medium mb-4">System Status</h3>
-                <div id="status-badge" class="inline-flex items-center px-4 py-2 rounded-lg border healthy font-medium capitalize transition-all">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-gray-400 text-sm font-semibold tracking-wider uppercase">System Status</h3>
+                    <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div id="status-badge" class="inline-flex items-center justify-center px-4 py-3 rounded-xl border healthy font-bold tracking-wide uppercase transition-all shadow-lg text-sm w-full">
                     Healthy
                 </div>
             </div>
 
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg">
-                <h3 class="text-gray-400 text-sm font-medium mb-2">ML Anomaly Score</h3>
-                <div class="flex items-end gap-2">
-                    <span id="score-val" class="text-3xl font-bold text-gray-100">0.000</span>
-                    <span class="text-sm text-gray-500 mb-1">thr: 0.5</span>
+            <div class="glass-card rounded-2xl p-6">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-gray-400 text-sm font-semibold tracking-wider uppercase">ML Anomaly Score</h3>
+                    <svg class="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
-                <div class="w-full bg-gray-800 h-1.5 mt-4 rounded-full overflow-hidden">
-                    <div id="score-bar" class="h-full rounded-full transition-all duration-500 bg-emerald-500" style="width: 5%"></div>
+                <div class="flex items-end gap-2 mt-2">
+                    <span id="score-val" class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400 transition-all">0.000</span>
+                    <span class="text-xs text-gray-500 mb-1.5 font-medium">thr: 0.5</span>
+                </div>
+                <div class="w-full bg-gray-800/50 h-2 mt-4 rounded-full overflow-hidden border border-gray-700/50">
+                    <div id="score-bar" class="h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-emerald-400 to-emerald-500" style="width: 5%"></div>
                 </div>
             </div>
 
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg">
-                <h3 class="text-gray-400 text-sm font-medium mb-2">CPU Utilization</h3>
-                <div id="cpu-val" class="text-3xl font-bold text-gray-100">--%</div>
+            <div class="glass-card rounded-2xl p-6">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-gray-400 text-sm font-semibold tracking-wider uppercase">CPU Utilization</h3>
+                    <svg class="w-5 h-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
+                </div>
+                <div id="cpu-val" class="text-4xl font-bold text-gray-100 mt-2">--<span class="text-2xl text-gray-500">%</span></div>
             </div>
 
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg">
-                <h3 class="text-gray-400 text-sm font-medium mb-2">Request Latency</h3>
-                <div id="latency-val" class="text-3xl font-bold text-gray-100">--ms</div>
+            <div class="glass-card rounded-2xl p-6">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-gray-400 text-sm font-semibold tracking-wider uppercase">Request Latency</h3>
+                    <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div id="latency-val" class="text-4xl font-bold text-gray-100 mt-2">--<span class="text-2xl text-gray-500">ms</span></div>
             </div>
         </div>
 
         <!-- Main Dashboard Row -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[400px]">
-            <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg flex flex-col relative">
-                <h2 class="text-lg font-medium text-gray-200 mb-4">Live Telemetry Stream</h2>
-                <div class="flex-1 min-h-0 relative w-full">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[450px]">
+            <div class="lg:col-span-2 glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden group">
+                <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none"></div>
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-gray-100 flex items-center tracking-wide">
+                        <svg class="w-5 h-5 mr-3 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>
+                        Infrastructure Telemetry Stream
+                    </h2>
+                    <div class="flex gap-4">
+                        <div class="flex items-center text-xs text-gray-400"><span class="w-3 h-3 rounded bg-[#38bdf8] mr-2"></span> CPU</div>
+                        <div class="flex items-center text-xs text-gray-400"><span class="w-3 h-3 rounded bg-[#a78bfa] mr-2"></span> Memory</div>
+                    </div>
+                </div>
+                <div class="flex-1 min-h-0 relative w-full mt-2">
                     <canvas id="telemetryChart"></canvas>
                 </div>
             </div>
 
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg flex flex-col overflow-hidden max-h-[400px]">
-                <h2 class="text-lg font-medium text-gray-200 mb-4">Remediation & Action Logs</h2>
-                <div id="event-log" class="flex-1 overflow-y-auto space-y-3 pr-2 event-log">
-                    <div class="text-gray-500 text-sm flex items-center justify-center h-full text-center">Waiting for telemetry...</div>
+            <div class="glass-card rounded-2xl p-6 flex flex-col overflow-hidden max-h-[500px]">
+                <h2 class="text-xl font-semibold text-gray-100 mb-6 flex items-center tracking-wide border-b border-gray-800 pb-4">
+                    <svg class="w-5 h-5 mr-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                    Action & Alert Logs
+                </h2>
+                <div id="event-log" class="flex-1 overflow-y-auto space-y-4 pr-2 event-log">
+                    <div class="text-gray-500 text-sm flex items-center justify-center h-full text-center font-light">Listening for telemetry streams...</div>
                 </div>
             </div>
         </div>
@@ -85,26 +201,64 @@
 
     <script>
         const ctx = document.getElementById('telemetryChart').getContext('2d');
-        const MAX_POINTS = 20;
+        const MAX_POINTS = 25;
+        
+        // Setup Chart
+        Chart.defaults.font.family = "'Outfit', sans-serif";
+        Chart.defaults.color = '#94a3b8';
         
         const chart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: Array(MAX_POINTS).fill(''),
                 datasets: [
-                    { label: 'CPU %', data: Array(MAX_POINTS).fill(null), borderColor: '#38bdf8', borderWidth: 2, tension: 0.3, pointRadius: 0 },
-                    { label: 'Memory %', data: Array(MAX_POINTS).fill(null), borderColor: '#a78bfa', borderWidth: 2, tension: 0.3, pointRadius: 0 }
+                    { 
+                        label: 'CPU %', 
+                        data: Array(MAX_POINTS).fill(null), 
+                        borderColor: '#38bdf8', 
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        borderWidth: 3, 
+                        tension: 0.4, 
+                        pointRadius: 0,
+                        fill: true
+                    },
+                    { 
+                        label: 'Memory %', 
+                        data: Array(MAX_POINTS).fill(null), 
+                        borderColor: '#a78bfa', 
+                        borderWidth: 3, 
+                        tension: 0.4, 
+                        pointRadius: 0 
+                    }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: false,
-                plugins: { legend: { labels: { color: '#9ca3af' } } },
+                animation: { duration: 400, easing: 'linear' },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#cbd5e1',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        padding: 10,
+                        cornerRadius: 8
+                    }
+                },
                 scales: {
-                    x: { ticks: { color: '#9ca3af' }, grid: { display: false } },
-                    y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151', borderDash: [5, 5] }, min: 0, max: 100 }
-                }
+                    x: { ticks: { maxTicksLimit: 8 }, grid: { display: false, drawBorder: false } },
+                    y: { 
+                        grid: { color: 'rgba(255, 255, 255, 0.03)', drawBorder: false }, 
+                        min: 0, max: 100,
+                        border: { display: false }
+                    }
+                },
+                interaction: { mode: 'nearest', axis: 'x', intersect: false }
             }
         });
 
@@ -115,19 +269,34 @@
         const latencyVal = document.getElementById('latency-val');
         const eventLog = document.getElementById('event-log');
 
+        const icons = {
+            error: '<svg class="w-4 h-4 mt-0.5 text-rose-400 font-bold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>',
+            warning: '<svg class="w-4 h-4 mt-0.5 text-amber-400 font-bold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>',
+            success: '<svg class="w-4 h-4 mt-0.5 text-emerald-400 font-bold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+            info: '<svg class="w-4 h-4 mt-0.5 text-blue-400 font-bold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+        };
+
         function addLog(message, type) {
-            if (eventLog.children.length === 1 && eventLog.innerText.includes('Waiting')) {
+            if (eventLog.children.length === 1 && eventLog.innerText.includes('Listening')) {
                 eventLog.innerHTML = '';
             }
             const time = new Date().toLocaleTimeString();
-            let colorCls = 'text-emerald-400';
-            if (type === 'error') colorCls = 'text-rose-400';
-            else if (type === 'warning') colorCls = 'text-amber-400';
-            else if (type === 'info') colorCls = 'text-blue-400';
+            let colorCls = 'text-emerald-100';
+            let bgCls = 'bg-emerald-500/10 border-emerald-500/20';
+            
+            if (type === 'error') { colorCls = 'text-rose-100'; bgCls = 'bg-rose-500/10 border-rose-500/20'; }
+            else if (type === 'warning') { colorCls = 'text-amber-100'; bgCls = 'bg-amber-500/10 border-amber-500/20'; }
+            else if (type === 'info') { colorCls = 'text-blue-100'; bgCls = 'bg-blue-500/10 border-blue-500/20'; }
 
             const div = document.createElement('div');
-            div.className = 'p-3 rounded-lg border border-gray-800 bg-gray-950/50 flex flex-col gap-1 text-sm transition-all animate-fade-in';
-            div.innerHTML = `<span class="text-xs text-gray-500">${time}</span><span class="${colorCls}">${message}</span>`;
+            div.className = `p-3.5 rounded-xl border flex items-start gap-3 text-sm transition-all animate-fade-in shadow-sm ${bgCls}`;
+            div.innerHTML = `
+                ${icons[type]}
+                <div class="flex flex-col">
+                    <span class="text-xs text-gray-400 font-medium mb-0.5">${time}</span>
+                    <span class="${colorCls} font-medium tracking-wide leading-relaxed">${message}</span>
+                </div>
+            `;
             eventLog.prepend(div);
             
             if (eventLog.children.length > 20) {
@@ -135,33 +304,32 @@
             }
         }
 
-        addLog("System starting. Connecting to backend WS...", "info");
+        addLog("Observability Platform initialized. Connecting backend.", "info");
 
-        // Connect to WebSocket
+        // WebSockets
         function connect() {
             const ws = new WebSocket('ws://localhost:8000/ws');
+            let isHealing = false;
             
-            ws.onopen = () => addLog("Connected to Telemetry Stream", "success");
+            ws.onopen = () => addLog("Connected to live telemetry stream.", "success");
             
             ws.onmessage = (event) => {
                 const payload = JSON.parse(event.data);
                 
                 if (payload.event === 'self_healing_started') {
-                    statusBadge.className = 'inline-flex items-center px-4 py-2 rounded-lg border font-medium capitalize transition-all self-healing';
-                    statusBadge.innerText = 'Self Healing';
-                    addLog("Self-healing triggered: Restarting degraded services...", "warning");
+                    isHealing = true;
+                    statusBadge.className = 'inline-flex items-center justify-center px-4 py-3 rounded-xl border font-bold capitalize transition-all shadow-lg text-sm w-full self-healing';
+                    statusBadge.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Self Healing...';
+                    addLog("Anomaly verified. Self-healing protocols initiated. Isolating container...", "warning");
                 } 
                 else if (payload.event === 'self_healing_completed') {
-                    statusBadge.className = 'inline-flex items-center px-4 py-2 rounded-lg border font-medium capitalize transition-all healthy';
-                    statusBadge.innerText = 'Healthy';
-                    addLog("Self-healing completed: System restored to nominal state.", "success");
-                    
-                    if (payload.actions) {
-                        payload.actions.forEach(a => addLog(`Action details: ${a.action}`, "info"));
-                    }
+                    isHealing = false;
+                    statusBadge.className = 'inline-flex items-center justify-center px-4 py-3 rounded-xl border font-bold capitalize transition-all shadow-lg text-sm w-full healthy';
+                    statusBadge.innerHTML = 'Healthy';
+                    addLog("Self-healing completed successfully. Automated Email dispatched to roshinipachiyappan404@gmail.com.", "success");
                 } 
                 else if (payload.metrics) {
-                    const timeStr = new Date(payload.timestamp * 1000).toLocaleTimeString();
+                    const timeStr = new Date(payload.timestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
                     
                     chart.data.labels.push(timeStr);
                     chart.data.labels.shift();
@@ -174,25 +342,30 @@
                     
                     chart.update();
 
-                    cpuVal.innerText = payload.metrics.cpu_percent.toFixed(1) + '%';
-                    latencyVal.innerText = payload.metrics.request_latency_ms.toFixed(0) + 'ms';
+                    cpuVal.innerHTML = payload.metrics.cpu_percent.toFixed(1) + '<span class="text-2xl text-gray-500 ml-1">%</span>';
+                    latencyVal.innerHTML = payload.metrics.request_latency_ms.toFixed(0) + '<span class="text-2xl text-gray-500 ml-1">ms</span>';
                     
                     const sc = payload.anomaly_score.toFixed(3);
                     scoreVal.innerText = sc;
+                    
                     const pct = Math.min(Math.max((payload.anomaly_score / 2) * 100, 5), 100);
                     scoreBar.style.width = pct + '%';
 
                     if (payload.is_anomaly) {
-                        scoreBar.className = 'h-full rounded-full transition-all duration-500 bg-rose-500';
-                        if (statusBadge.innerText !== 'Self Healing') {
-                            statusBadge.className = 'inline-flex items-center px-4 py-2 rounded-lg border font-medium capitalize transition-all critical';
+                        scoreBar.className = 'h-full rounded-full transition-all duration-300 bg-gradient-to-r from-rose-400 to-rose-600 shadow-[0_0_10px_rgba(244,63,94,0.8)]';
+                        scoreVal.className = 'text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-rose-300 to-rose-500 transition-all filter drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]';
+                        
+                        if (!isHealing && statusBadge.innerText !== 'CRITICAL ANOMALY') {
+                            statusBadge.className = 'inline-flex items-center justify-center px-4 py-3 rounded-xl border font-bold capitalize transition-all shadow-lg text-sm w-full critical';
                             statusBadge.innerText = 'Critical Anomaly';
-                            addLog(`Anomaly Detected! ML Score: ${sc} | CPU: ${payload.metrics.cpu_percent.toFixed(0)}%`, "error");
+                            addLog(`System Degradation Detected! ML Anomaly Score spiked to ${sc}. Automated containment arming.`, "error");
                         }
                     } else {
-                        scoreBar.className = 'h-full rounded-full transition-all duration-500 bg-emerald-500';
-                        if (payload.system_status === 'healthy') {
-                            statusBadge.className = 'inline-flex items-center px-4 py-2 rounded-lg border font-medium capitalize transition-all healthy';
+                        scoreBar.className = 'h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-emerald-400 to-emerald-500';
+                        scoreVal.className = 'text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400 transition-all';
+                        
+                        if (!isHealing && payload.system_status === 'healthy') {
+                            statusBadge.className = 'inline-flex items-center justify-center px-4 py-3 rounded-xl border font-bold capitalize transition-all shadow-lg text-sm w-full healthy';
                             statusBadge.innerText = 'Healthy';
                         }
                     }
@@ -200,7 +373,9 @@
             };
             
             ws.onclose = () => {
-                addLog("Disconnected from backend. Retrying...", "error");
+                addLog("Lost connection to Nexus Platform. Attempting reconnect...", "error");
+                statusBadge.className = 'inline-flex items-center justify-center px-4 py-3 rounded-xl border font-bold capitalize transition-all shadow-lg text-sm w-full bg-gray-900 border-gray-700 text-gray-500';
+                statusBadge.innerText = 'Offline';
                 setTimeout(connect, 3000);
             };
         }
