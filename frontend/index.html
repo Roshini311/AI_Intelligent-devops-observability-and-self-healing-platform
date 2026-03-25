@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus AI Observability & Self-Healing Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { 
+            background-color: #030712; 
+            color: #f3f4f6; 
+            font-family: 'Inter', sans-serif; 
+        }
+        .healthy { color: #34d399; border-color: rgba(52, 211, 153, 0.2); background-color: rgba(52, 211, 153, 0.1); }
+        .degraded { color: #fbbf24; border-color: rgba(251, 191, 36, 0.2); background-color: rgba(251, 191, 36, 0.1); animation: pulse 2s infinite; }
+        .self-healing { color: #60a5fa; border-color: rgba(96, 165, 250, 0.2); background-color: rgba(96, 165, 250, 0.1); }
+        .critical { color: #f87171; border-color: rgba(248, 113, 113, 0.2); background-color: rgba(248, 113, 113, 0.1); animation: pulse 1s infinite; }
+        
+        .event-log::-webkit-scrollbar { width: 6px; }
+        .event-log::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="bg-gray-900 border-b border-gray-800 p-4 sticky top-0 z-10 shadow-md">
+        <div class="container mx-auto flex items-center justify-between">
+            <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 tracking-wide">
+                Nexus AI Observability
+            </h1>
+            <span class="text-sm font-medium text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">
+                DevOps Self-Healing Platform
+            </span>
+        </div>
+    </header>
+    
+    <main class="container mx-auto py-8 px-4 flex-1 space-y-6 flex flex-col">
+        <!-- Top Metrics Row -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg">
+                <h3 class="text-gray-400 text-sm font-medium mb-4">System Status</h3>
+                <div id="status-badge" class="inline-flex items-center px-4 py-2 rounded-lg border healthy font-medium capitalize transition-all">
+                    Healthy
+                </div>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg">
+                <h3 class="text-gray-400 text-sm font-medium mb-2">ML Anomaly Score</h3>
+                <div class="flex items-end gap-2">
+                    <span id="score-val" class="text-3xl font-bold text-gray-100">0.000</span>
+                    <span class="text-sm text-gray-500 mb-1">thr: 0.5</span>
+                </div>
+                <div class="w-full bg-gray-800 h-1.5 mt-4 rounded-full overflow-hidden">
+                    <div id="score-bar" class="h-full rounded-full transition-all duration-500 bg-emerald-500" style="width: 5%"></div>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg">
+                <h3 class="text-gray-400 text-sm font-medium mb-2">CPU Utilization</h3>
+                <div id="cpu-val" class="text-3xl font-bold text-gray-100">--%</div>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg">
+                <h3 class="text-gray-400 text-sm font-medium mb-2">Request Latency</h3>
+                <div id="latency-val" class="text-3xl font-bold text-gray-100">--ms</div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[400px]">
+            <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg flex flex-col relative">
+                <h2 class="text-lg font-medium text-gray-200 mb-4">Live Telemetry Stream</h2>
+                <div class="flex-1 min-h-0 relative w-full">
+                    <canvas id="telemetryChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg flex flex-col overflow-hidden max-h-[400px]">
+                <h2 class="text-lg font-medium text-gray-200 mb-4">Remediation & Action Logs</h2>
+                <div id="event-log" class="flex-1 overflow-y-auto space-y-3 pr-2 event-log">
+                    <div class="text-gray-500 text-sm flex items-center justify-center h-full text-center">Waiting for telemetry...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const ctx = document.getElementById('telemetryChart').getContext('2d');
+        const MAX_POINTS = 20;
+        
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array(MAX_POINTS).fill(''),
+                datasets: [
+                    { label: 'CPU %', data: Array(MAX_POINTS).fill(null), borderColor: '#38bdf8', borderWidth: 2, tension: 0.3, pointRadius: 0 },
+                    { label: 'Memory %', data: Array(MAX_POINTS).fill(null), borderColor: '#a78bfa', borderWidth: 2, tension: 0.3, pointRadius: 0 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: { legend: { labels: { color: '#9ca3af' } } },
+                scales: {
+                    x: { ticks: { color: '#9ca3af' }, grid: { display: false } },
+                    y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151', borderDash: [5, 5] }, min: 0, max: 100 }
+                }
+            }
+        });
+
+        const statusBadge = document.getElementById('status-badge');
+        const scoreVal = document.getElementById('score-val');
+        const scoreBar = document.getElementById('score-bar');
+        const cpuVal = document.getElementById('cpu-val');
+        const latencyVal = document.getElementById('latency-val');
+        const eventLog = document.getElementById('event-log');
+
+        function addLog(message, type) {
+            if (eventLog.children.length === 1 && eventLog.innerText.includes('Waiting')) {
+                eventLog.innerHTML = '';
+            }
+            const time = new Date().toLocaleTimeString();
+            let colorCls = 'text-emerald-400';
+            if (type === 'error') colorCls = 'text-rose-400';
+            else if (type === 'warning') colorCls = 'text-amber-400';
+            else if (type === 'info') colorCls = 'text-blue-400';
+
+            const div = document.createElement('div');
+            div.className = 'p-3 rounded-lg border border-gray-800 bg-gray-950/50 flex flex-col gap-1 text-sm transition-all animate-fade-in';
+            div.innerHTML = `<span class="text-xs text-gray-500">${time}</span><span class="${colorCls}">${message}</span>`;
+            eventLog.prepend(div);
+            
+            if (eventLog.children.length > 20) {
+                eventLog.removeChild(eventLog.lastChild);
+            }
+        }
+
+        addLog("System starting. Connecting to backend WS...", "info");
+
+        // Connect to WebSocket
+        function connect() {
+            const ws = new WebSocket('ws://localhost:8000/ws');
+            
+            ws.onopen = () => addLog("Connected to Telemetry Stream", "success");
+            
+            ws.onmessage = (event) => {
+                const payload = JSON.parse(event.data);
+                
+                if (payload.event === 'self_healing_started') {
+                    statusBadge.className = 'inline-flex items-center px-4 py-2 rounded-lg border font-medium capitalize transition-all self-healing';
+                    statusBadge.innerText = 'Self Healing';
+                    addLog("Self-healing triggered: Restarting degraded services...", "warning");
+                } 
+                else if (payload.event === 'self_healing_completed') {
+                    statusBadge.className = 'inline-flex items-center px-4 py-2 rounded-lg border font-medium capitalize transition-all healthy';
+                    statusBadge.innerText = 'Healthy';
+                    addLog("Self-healing completed: System restored to nominal state.", "success");
+                    
+                    if (payload.actions) {
+                        payload.actions.forEach(a => addLog(`Action details: ${a.action}`, "info"));
+                    }
+                } 
+                else if (payload.metrics) {
+                    const timeStr = new Date(payload.timestamp * 1000).toLocaleTimeString();
+                    
+                    chart.data.labels.push(timeStr);
+                    chart.data.labels.shift();
+                    
+                    chart.data.datasets[0].data.push(payload.metrics.cpu_percent);
+                    chart.data.datasets[0].data.shift();
+                    
+                    chart.data.datasets[1].data.push(payload.metrics.memory_percent);
+                    chart.data.datasets[1].data.shift();
+                    
+                    chart.update();
+
+                    cpuVal.innerText = payload.metrics.cpu_percent.toFixed(1) + '%';
+                    latencyVal.innerText = payload.metrics.request_latency_ms.toFixed(0) + 'ms';
+                    
+                    const sc = payload.anomaly_score.toFixed(3);
+                    scoreVal.innerText = sc;
+                    const pct = Math.min(Math.max((payload.anomaly_score / 2) * 100, 5), 100);
+                    scoreBar.style.width = pct + '%';
+
+                    if (payload.is_anomaly) {
+                        scoreBar.className = 'h-full rounded-full transition-all duration-500 bg-rose-500';
+                        if (statusBadge.innerText !== 'Self Healing') {
+                            statusBadge.className = 'inline-flex items-center px-4 py-2 rounded-lg border font-medium capitalize transition-all critical';
+                            statusBadge.innerText = 'Critical Anomaly';
+                            addLog(`Anomaly Detected! ML Score: ${sc} | CPU: ${payload.metrics.cpu_percent.toFixed(0)}%`, "error");
+                        }
+                    } else {
+                        scoreBar.className = 'h-full rounded-full transition-all duration-500 bg-emerald-500';
+                        if (payload.system_status === 'healthy') {
+                            statusBadge.className = 'inline-flex items-center px-4 py-2 rounded-lg border font-medium capitalize transition-all healthy';
+                            statusBadge.innerText = 'Healthy';
+                        }
+                    }
+                }
+            };
+            
+            ws.onclose = () => {
+                addLog("Disconnected from backend. Retrying...", "error");
+                setTimeout(connect, 3000);
+            };
+        }
+
+        connect();
+    </script>
+</body>
+</html>
