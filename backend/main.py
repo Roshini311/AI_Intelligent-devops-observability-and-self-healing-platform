@@ -1,5 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import asyncio
 import json
@@ -136,6 +138,12 @@ async def trigger_self_healing(score):
     
     # Send email about resolution
     send_alert_email("Rectified / Healthy", f"The anomaly has been successfully rectified. Associated pods were restarted and system is back to nominal state.")
+
+@app.get("/")
+def serve_dashboard():
+    html_path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'index.html')
+    with open(html_path, 'r') as f:
+        return HTMLResponse(content=f.read())
 
 if __name__ == "__main__":
     import uvicorn

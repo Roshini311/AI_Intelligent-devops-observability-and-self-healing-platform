@@ -308,7 +308,9 @@
 
         // WebSockets
         function connect() {
-            const ws = new WebSocket('ws://localhost:8000/ws');
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+            const ws = new WebSocket(wsUrl);
             let isHealing = false;
             
             ws.onopen = () => addLog("Connected to live telemetry stream.", "success");
