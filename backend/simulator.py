@@ -1,8 +1,10 @@
 import requests
 import time
 import random
+import os
 
-API_URL = "http://localhost:8000/ingest"
+PORT = os.environ.get("PORT", "8000")
+API_URL = f"http://127.0.0.1:{PORT}/ingest"
 
 def simulate_realtime_data():
     anomaly_probability = 0.05
@@ -36,7 +38,8 @@ def simulate_realtime_data():
         }
         
         try:
-            requests.post(API_URL, json=payload)
+            headers = {"Authorization": "Bearer nexus_secure_token"}
+            requests.post(API_URL, json=payload, headers=headers)
         except requests.exceptions.ConnectionError:
             print("API not available. Retrying...")
             
